@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Feature;
+use App\Form\FeatureFormType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
 class FeatureController extends AbstractController
@@ -75,6 +77,33 @@ class FeatureController extends AbstractController
         }
 
         return new JsonResponse($geojson_array, 200, ['Access-Control-Allow-Origin' => '*']);
+    }
+
+    /**
+     * @Route(
+     *     "/feature",
+     *     name="post_feature",
+     *     methods={"POST"})
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createFeature(Request $request)
+    {
+        $feature = new Feature();
+        $data = json_decode($request->getContent(), true);
+
+        $form = $this->createForm(FeatureFormType::class, $feature);
+        $form->submit($data);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager = $this->getDoctrine()->getManager();
+            $entityManager->persist($feature);
+            $entityManager->flush();
+        } else {
+            foreach($form->getErrors() as $error) {
+                $errors[] = $error->getMessage();
+            }
+        }
     }
 
     /**
